@@ -1,0 +1,6 @@
+Image 70_5 in DB1_A was erroneously labelled as belonging to 
+finger 70 during data collection.
+This error was detected only after the competition, so all the
+published results (including fvc2000 web site and report) are
+slightly biased due to this error. For a fair comparison with
+existing results, you should leave the database as is.
