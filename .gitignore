@@ -1,0 +1,81 @@
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+
+# ==============================
+# Virtual Environment
+# ==============================
+.venv/
+venv/
+env/
+
+# ==============================
+# Jupyter Notebook
+# ==============================
+.ipynb_checkpoints/
+
+# ==============================
+# IDE and Editor
+# ==============================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==============================
+# Fingerprint Datasets
+# ==============================
+datasets/
+
+# ==============================
+# Model Weights and Checkpoints
+# ==============================
+*.pth
+*.pt
+*.ckpt
+*.onnx
+
+# ==============================
+# Generated Outputs and Results
+# ==============================
+outputs/
+runs/
+logs/
+results/
+*.csv
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.bmp
+
+# ==============================
+# Python / ML Cache
+# ==============================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+wandb/
+
+# ==============================
+# Environment Variables / Secrets
+# ==============================
+.env
+.env.*
+!.env.example
+
+# ==============================
+# OS Files
+# ==============================
+.DS_Store
+Thumbs.db
+desktop.ini
