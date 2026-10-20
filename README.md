@@ -109,11 +109,9 @@ The results therefore measure reconstruction under the selected synthetic degrad
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/Someshbharathi/Fingerprint-Image-Enhancement.git
 cd Fingerprint-Image-Enhancement
 ```
-
-Replace `<YOUR_REPOSITORY_URL>` with the actual Git repository URL.
 
 ### 2. Create a virtual environment
 
