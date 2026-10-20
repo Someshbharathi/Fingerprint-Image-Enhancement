@@ -226,6 +226,7 @@ Recommended deliverables:
 
 ## 👥 Contributors
 
-- **Project Developer:** Rutuja Shinde
-- **Collaborator(s):** Somesh Bharathi , Neha Bhaskar
+- Rutuja Shinde
+- Somesh Bharathi
+- Neha Bhaskar
 
