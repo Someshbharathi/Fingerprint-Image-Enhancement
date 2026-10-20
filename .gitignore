@@ -79,3 +79,5 @@ wandb/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+.venv-gpu
