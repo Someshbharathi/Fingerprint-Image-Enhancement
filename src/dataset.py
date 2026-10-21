@@ -1,73 +1,43 @@
-
 from pathlib import Path
-import cv2
+import random
+import torch
+from torch.utils.data import Dataset
+from .preprocessing import IMAGE_EXTENSIONS, open_grayscale, resize_and_pad, image_to_tensor
+from .degradation import degrade_image
 
-# Locate the project root (the parent folder of src/)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATASET_ROOT = PROJECT_ROOT / "datasets"
+class FingerprintEnhancementDataset(Dataset):
+    """Synthetic paired data: degraded original -> original target."""
+    def __init__(self, root=None, paths=None, image_size=256, training=True,
+                 evaluation_degradation=False, seed=1234):
+        self.image_size = int(image_size)
+        self.training = bool(training)
+        self.evaluation_degradation = bool(evaluation_degradation)
+        self.seed = int(seed)
+        if paths is not None:
+            found = [Path(p) for p in paths]
+        elif root is not None:
+            root = Path(root).expanduser()
+            if not root.is_dir():
+                raise FileNotFoundError(f"Dataset directory not found: {root}")
+            found = [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS]
+        else:
+            raise ValueError("Provide root or paths")
+        self.paths = sorted(p for p in found if p.is_file())
+        if not self.paths:
+            raise ValueError("No supported images found")
 
-DATASETS = ["FVC2000", "FVC2002", "FVC2004", "SOCOFing"]
+    def __len__(self):
+        return len(self.paths)
 
-IMAGE_EXTENSIONS = {
-    ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"
-}
-
-
-def inspect_dataset(name):
-    folder = DATASET_ROOT / name
-
-    print(f"\n{'=' * 50}")
-    print(f"DATASET: {name}")
-    print(f"Path: {folder}")
-    print(f"{'=' * 50}")
-
-    if not folder.exists():
-        print("ERROR: Dataset folder not found!")
-        return
-
-    image_paths = sorted(
-        p for p in folder.rglob("*")
-        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-    )
-
-    print("Total images found:", len(image_paths))
-
-    if not image_paths:
-        print("No supported images found. Check the folder structure.")
-        return
-
-    print("\nFirst 5 image paths:")
-    for path in image_paths[:5]:
-        print(" ", path.relative_to(PROJECT_ROOT))
-
-    print("\nInspecting image dimensions:")
-    readable = 0
-    unreadable = 0
-    dimensions = {}
-
-    for path in image_paths:
-        image = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
-
-        if image is None:
-            unreadable += 1
-            continue
-
-        readable += 1
-        height, width = image.shape
-        dimensions[(height, width)] = dimensions.get(
-            (height, width), 0
-        ) + 1
-
-    print("Readable images:", readable)
-    print("Unreadable images:", unreadable)
-    print("Image dimensions (height, width):")
-
-    for shape, count in sorted(
-        dimensions.items(), key=lambda item: item[1], reverse=True
-    )[:10]:
-        print(f"  {shape}: {count} images")
-
-
-if __name__ == "__main__":
-    for dataset_name in DATASETS:
-        inspect_dataset(dataset_name)
+    def __getitem__(self, index):
+        path = self.paths[index]
+        clean = resize_and_pad(open_grayscale(path), self.image_size)
+        if self.training:
+            degraded = degrade_image(clean, seed=random.getrandbits(32))
+        elif self.evaluation_degradation:
+            degraded = degrade_image(clean, seed=self.seed + index)
+        else:
+            degraded = clean.copy()
+        return {"input": image_to_tensor(degraded, self.image_size),
+                "target": image_to_tensor(clean, self.image_size),
+                "path": str(path)}

@@ -80,4 +80,5 @@ wandb/
 Thumbs.db
 desktop.ini
 
-.venv-gpu
+*.venv-gpu
+*.zip
