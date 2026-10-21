@@ -37,7 +37,7 @@ datasets/
 # ==============================
 # Model Weights and Checkpoints
 # ==============================
-*.pth
+
 *.pt
 *.ckpt
 *.onnx
@@ -45,7 +45,7 @@ datasets/
 # ==============================
 # Generated Outputs and Results
 # ==============================
-outputs/
+
 runs/
 logs/
 results/
@@ -55,7 +55,7 @@ results/
 *.jpeg
 *.tif
 *.tiff
-*.bmp
+
 
 # ==============================
 # Python / ML Cache
