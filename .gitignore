@@ -39,7 +39,7 @@ datasets/
 # Model Weights and Checkpoints
 # ==============================
 
-*.pt
+
 *.ckpt
 *.onnx
 
