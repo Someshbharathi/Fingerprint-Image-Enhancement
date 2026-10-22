@@ -33,7 +33,10 @@ env/
 # ==============================
 # Fingerprint Datasets
 # ==============================
-datasets/
+
+.data_validation/
+.enhanced/
+.comparisons/
 
 # ==============================
 # Model Weights and Checkpoints
@@ -83,3 +86,5 @@ desktop.ini
 
 *.venv-gpu
 *.zip
+*.csv
+*.png
