@@ -9,12 +9,30 @@ def set_seed(seed=42):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
+
 def get_device():
+    try:
+        import torch_directml
+
+        device = torch_directml.device()
+
+        # Verify that DirectML operations work
+        test = torch.tensor([1.0]).to(device)
+        _ = (test + 1).item()
+
+        return device
+
+    except Exception as e:
+        print(f"DirectML unavailable: {e}")
+
     if torch.cuda.is_available():
         return torch.device("cuda")
+
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         return torch.device("mps")
+
     return torch.device("cpu")
+
 
 def read_manifest(csv_path, split_name):
     import csv
