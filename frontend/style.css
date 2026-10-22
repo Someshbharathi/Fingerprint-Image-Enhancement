@@ -1,0 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  --canvas: #F5F7FB;
+  --surface: #FFFFFF;
+  --surface-subtle: #F8FAFC;
+  --text: #172033;
+  --text-secondary: #5B6475;
+  --text-muted: #647084;
+  --accent: #4F46E5;
+  --accent-hover: #4338CA;
+  --accent-soft: #EEF2FF;
+  --accent-border: #C7D2FE;
+  --button-secondary: #E9EEF7;
+  --button-secondary-hover: #DCE5F2;
+  --border: #E2E8F0;
+  --success-bg: #E8F7EF;
+  --success-text: #166534;
+  --warning-bg: #FFF7E6;
+  --warning-text: #92400E;
+  --error-bg: #FEF2F2;
+  --error-text: #991B1B;
+  --radius-card: 10px;
+  --radius-control: 7px;
+  --focus-ring: 0 0 0 3px rgba(79, 70, 229, .28);
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+body, .stApp, [data-testid="stAppViewContainer"] { background: var(--canvas); }
+[data-testid="stHeader"], [data-testid="stFooter"] { visibility: hidden; height: 0; }
+.block-container { max-width: 1440px; padding-top: 2rem; padding-bottom: 3rem; }
+
+/* Keep Streamlit's functional sidebar; only restyle its content and controls. */
+[data-testid="stSidebar"] {
+  min-width: 250px !important;
+  max-width: 250px !important;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] { background: var(--surface); }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: .35rem; }
+.brand { display:flex; gap:12px; align-items:center; padding:3px 8px 22px; border-bottom:1px solid var(--border); margin-bottom:22px; color:var(--text); }
+.brand-mark { width:40px; height:40px; border-radius:12px; background:var(--accent-soft); display:grid; place-items:center; color:var(--accent); }
+.brand-name { color:var(--text); font-size:15px; font-weight:700; letter-spacing:-.3px; }
+.brand-sub { color:var(--text-secondary); font-size:11px; margin-top:3px; }
+.nav-label { color:var(--text-muted); font-size:10px; font-weight:700; letter-spacing:1.15px; padding:0 10px; margin:17px 0 7px; }
+.nav-foot { border-top:1px solid var(--border); padding:14px 9px 0; color:var(--text-secondary); font-size:11px; line-height:2; }
+.env { display:inline-block; background:var(--surface-subtle); color:var(--text-secondary); border:1px solid var(--border); font-size:9px; font-weight:700; letter-spacing:.8px; padding:4px 7px; border-radius:4px; margin-top:8px; }
+
+/* Shared, high contrast treatment for Streamlit action, download and form buttons. */
+div[data-testid="stButton"] button,
+div[data-testid="stDownloadButton"] button,
+div[data-testid="stFormSubmitButton"] button,
+button[kind="primary"], button[kind="secondary"],
+[data-testid="stBaseButton-primary"], [data-testid="stBaseButton-secondary"] {
+  min-height: 2.45rem;
+  border-radius: var(--radius-control) !important;
+  font-family: var(--font-ui) !important;
+  font-weight: 600 !important;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+div[data-testid="stButton"] button[kind="primary"],
+div[data-testid="stDownloadButton"] button,
+div[data-testid="stFormSubmitButton"] button,
+button[kind="primary"], [data-testid="stBaseButton-primary"] {
+  background: var(--accent) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--accent) !important;
+}
+div[data-testid="stButton"] button[kind="primary"] *,
+div[data-testid="stDownloadButton"] button *,
+div[data-testid="stFormSubmitButton"] button *,
+button[kind="primary"] *, [data-testid="stBaseButton-primary"] * { color: #FFFFFF !important; }
+div[data-testid="stButton"] button[kind="secondary"],
+button[kind="secondary"], [data-testid="stBaseButton-secondary"] {
+  background: var(--button-secondary) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}
+div[data-testid="stButton"] button[kind="secondary"] *,
+button[kind="secondary"] *, [data-testid="stBaseButton-secondary"] * { color: var(--text) !important; }
+div[data-testid="stButton"] button:hover,
+div[data-testid="stDownloadButton"] button:hover,
+div[data-testid="stFormSubmitButton"] button:hover,
+button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover {
+  background: var(--accent-hover) !important; color:#FFFFFF !important; border-color:var(--accent-hover) !important;
+}
+div[data-testid="stButton"] button[kind="secondary"]:hover,
+button[kind="secondary"]:hover, [data-testid="stBaseButton-secondary"]:hover {
+  background:var(--button-secondary-hover) !important; color:var(--text) !important; border-color:#CBD5E1 !important;
+}
+div[data-testid="stButton"] button:focus-visible,
+div[data-testid="stDownloadButton"] button:focus-visible,
+div[data-testid="stFormSubmitButton"] button:focus-visible,
+button[kind]:focus-visible { outline:3px solid var(--accent-border) !important; outline-offset:2px !important; box-shadow:var(--focus-ring) !important; }
+div[data-testid="stButton"] button:disabled,
+div[data-testid="stDownloadButton"] button:disabled { background:#E2E8F0 !important; border-color:#CBD5E1 !important; color:#475569 !important; opacity:1 !important; }
+
+/* Active navigation is intentionally pale, unlike a primary page action. */
+[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="primary"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] {
+  position:relative; justify-content:flex-start !important; text-align:left !important;
+  background:var(--accent-soft) !important; color:#3730A3 !important;
+  border:1px solid #E0E7FF !important; box-shadow:none !important;
+}
+[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="primary"] *,
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] * { color:#3730A3 !important; }
+[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="primary"]::before,
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"]::before {
+  content:""; position:absolute; left:-1px; top:7px; bottom:7px; width:3px;
+  border-radius:0 3px 3px 0; background:var(--accent);
+}
+[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="secondary"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {
+  justify-content:flex-start !important; text-align:left !important;
+  background:var(--surface) !important; color:var(--text-secondary) !important; border-color:transparent !important;
+}
+[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="secondary"] *,
+[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] * { color:var(--text-secondary) !important; }
+[data-testid="stSidebar"] div[data-testid="stButton"] button[kind="secondary"]:hover,
+[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:hover { background:var(--surface-subtle) !important; color:var(--text) !important; }
+[data-testid="stSidebar"] div[data-testid="stButton"] button:focus-visible { outline-offset:1px !important; }
+
+/* Page hierarchy and custom metric components. */
+.page-head { margin:0 0 24px; }
+.eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.4px; margin-bottom:8px; }
+.title { color:var(--text); font-size:29px; line-height:1.2; letter-spacing:-.8px; font-weight:700; }
+.subtitle { color:var(--text-secondary); font-size:14px; margin-top:8px; max-width:700px; }
+.metric { background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-card); padding:17px 18px; min-height:102px; box-shadow:0 1px 2px rgba(23,32,51,.035); }
+.metric-label { color:var(--text-secondary); font-size:12px; }
+.metric-value { color:var(--text); font-size:25px; font-weight:700; letter-spacing:-.5px; margin-top:12px; }
+.metric-hint { color:var(--text-muted); font-size:11px; margin-top:3px; }
+.badge { display:inline-flex; align-items:center; gap:6px; border-radius:20px; background:var(--success-bg); color:var(--success-text); font-size:11px; font-weight:600; padding:6px 10px; }
+.badge.off { background:var(--button-secondary); color:var(--text-secondary); }
+
+/* Overview workflow cards: scoped to keyed Streamlit containers. */
+.overview-intro { color:var(--text-secondary); font-size:15px; line-height:1.6; margin:-8px 0 22px; max-width:850px; }
+.st-key-overview_enhancement_card, .st-key-overview_evaluation_card { height:100%; }
+.st-key-overview_enhancement_card [data-testid="stVerticalBlockBorderWrapper"],
+.st-key-overview_evaluation_card [data-testid="stVerticalBlockBorderWrapper"] {
+  height:100%; min-height:300px; background:var(--surface); border:1px solid var(--border) !important;
+  border-radius:12px !important; box-shadow:0 3px 12px rgba(23,32,51,.045);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.st-key-overview_enhancement_card:hover [data-testid="stVerticalBlockBorderWrapper"],
+.st-key-overview_evaluation_card:hover [data-testid="stVerticalBlockBorderWrapper"] {
+  transform:translateY(-3px); border-color:#C7D2FE !important; box-shadow:0 9px 22px rgba(23,32,51,.085);
+}
+.st-key-overview_enhancement_card [data-testid="stVerticalBlock"],
+.st-key-overview_evaluation_card [data-testid="stVerticalBlock"] { min-height:264px; }
+.overview-card-content { padding:10px 4px 18px; }
+.overview-card-heading { display:flex; align-items:center; gap:12px; margin-bottom:21px; }
+.overview-card-icon { display:grid; place-items:center; width:48px; height:48px; border-radius:13px; flex:0 0 48px; }
+.overview-card-icon svg { width:30px; height:30px; }
+.overview-card-icon--indigo { color:#4F46E5; background:#EEF2FF; }
+.overview-card-icon--teal { color:#0F766E; background:#E6F6F3; }
+.overview-card-label { color:#4F46E5; font-size:10px; font-weight:700; letter-spacing:1.15px; }
+.overview-card-label--teal { color:#0F766E; }
+.overview-card-title { color:var(--text); font-size:23px; line-height:1.25; letter-spacing:-.45px; font-weight:700; margin:0 0 10px; }
+.overview-card-description { color:var(--text-secondary); font-size:14px; line-height:1.65; margin:0; max-width:520px; }
+.st-key-overview_enhancement_card [data-testid="stButton"],
+.st-key-overview_evaluation_card [data-testid="stButton"] { margin-top:auto; }
+.st-key-overview_evaluation_card [data-testid="stButton"] button {
+  color:#FFFFFF !important; background:#0F766E !important; border-color:#0F766E !important;
+}
+.st-key-overview_evaluation_card [data-testid="stButton"] button * { color:#FFFFFF !important; }
+.st-key-overview_evaluation_card [data-testid="stButton"] button:hover { background:#115E59 !important; border-color:#115E59 !important; }
+.st-key-overview_enhancement_card [data-testid="stButton"] button,
+.st-key-overview_evaluation_card [data-testid="stButton"] button { min-height:48px; font-size:14px; }
+.overview-section-heading { display:flex; align-items:baseline; gap:13px; margin:28px 0 14px; }
+.overview-section-kicker { color:var(--text-muted); font-size:9px; font-weight:700; letter-spacing:1.1px; }
+.overview-section-heading h2 { color:var(--text); font-size:17px; font-weight:650; letter-spacing:-.2px; margin:0; }
+.overview-step { display:flex; gap:13px; align-items:flex-start; min-height:76px; padding:12px 14px; border-left:1px solid var(--border); }
+.overview-step-number { display:grid; place-items:center; width:30px; height:30px; flex:0 0 30px; border-radius:9px; color:#4F46E5; background:#EEF2FF; font-size:11px; font-weight:700; }
+.overview-step-title { color:var(--text); font-size:12px; line-height:1.4; font-weight:650; margin:1px 0 5px; }
+.overview-step-description { color:var(--text-secondary); font-size:11px; line-height:1.5; }
+
+/* Selected-run quality summary uses a CSS grid to avoid Streamlit column sizing overlap. */
+.evaluation-summary-box { box-sizing:border-box; width:100%; margin:24px 0 4px; padding:24px; background:#FFFFFF; border:1px solid #D8E0EC; border-radius:12px; box-shadow:0 2px 8px rgba(23,32,51,.04); }
+.evaluation-summary-heading { margin:0 0 18px; }
+.evaluation-summary-kicker { color:var(--accent); font-size:9px; font-weight:700; letter-spacing:1.1px; }
+.evaluation-summary-heading h2 { color:var(--text); font-size:19px; line-height:1.3; font-weight:700; margin:5px 0 4px; }
+.evaluation-summary-heading p { color:var(--text-secondary); font-size:12px; margin:0; }
+.evaluation-summary-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:16px; width:100%; }
+.evaluation-summary-card { box-sizing:border-box; min-width:0; min-height:132px; padding:16px 17px; background:#F8FAFC; border:1px solid var(--border); border-radius:9px; overflow-wrap:anywhere; }
+.evaluation-summary-label { color:var(--text-secondary); font-size:12px; font-weight:650; }
+.evaluation-summary-value { color:var(--text); font-size:27px; line-height:1.25; font-weight:700; letter-spacing:-.45px; margin:11px 0 7px; font-variant-numeric:tabular-nums; }
+.evaluation-summary-description { color:var(--text-secondary); font-size:11px; line-height:1.5; }
+
+/* Explicit light-theme defaults for Streamlit text, controls and table surfaces. */
+[data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] strong,
+[data-testid="stText"], [data-testid="stCaptionContainer"],
+[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] p,
+[data-testid="stExpander"] summary, label, [data-testid="stStatusWidget"] {
+  color:var(--text-secondary);
+}
+[data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3, [data-testid="stSubheader"] {
+  color:var(--text) !important;
+}
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color:var(--text-muted) !important; }
+[data-testid="stTextInput"] input, [data-testid="stNumberInput"] input,
+[data-testid="stSelectbox"] [role="combobox"], [data-baseweb="select"] > div {
+  color:var(--text) !important; background:var(--surface) !important; border-color:var(--border) !important;
+}
+input::placeholder, textarea::placeholder { color:var(--text-muted) !important; opacity:1 !important; }
+[data-testid="stFileUploader"] { background:var(--surface); border:1px dashed #B8C3D3; border-radius:var(--radius-card); padding:12px; color:var(--text-secondary); }
+[data-testid="stFileUploader"] *, [data-testid="stFileUploaderDropzone"] * { color:var(--text-secondary) !important; }
+[data-testid="stDataFrame"], [data-testid="stTable"] { color:var(--text) !important; background:var(--surface) !important; }
+[data-testid="stVerticalBlockBorderWrapper"] { background:var(--surface); border-color:var(--border) !important; border-radius:var(--radius-card); }
+[data-testid="stAlert"] { border-radius:var(--radius-control); }
+[data-testid="stAlert"] p, [data-testid="stAlert"] li { color:var(--text) !important; }
+[data-baseweb="notification"] { color:var(--text) !important; }
+[data-testid="stProgress"] label { color:var(--text-secondary) !important; }
+
+@media (max-width:950px) {
+  [data-testid="stSidebar"] { min-width:220px !important; max-width:220px !important; }
+  .block-container { padding:1.25rem 1.2rem 2.5rem; }
+  .title { font-size:25px; }
+  .overview-intro { font-size:14px; }
+  .st-key-overview_enhancement_card [data-testid="stVerticalBlockBorderWrapper"],
+  .st-key-overview_evaluation_card [data-testid="stVerticalBlockBorderWrapper"] { min-height:290px; }
+}
+@media (max-width:700px) {
+  .st-key-overview_enhancement_card [data-testid="stVerticalBlockBorderWrapper"],
+  .st-key-overview_evaluation_card [data-testid="stVerticalBlockBorderWrapper"] { min-height:260px; }
+  .overview-card-title { font-size:20px; }
+  .overview-step { padding:8px 4px; border-left:0; }
+  .evaluation-summary-box { padding:16px; }
+  .evaluation-summary-grid { grid-template-columns:1fr; gap:10px; }
+  .evaluation-summary-card { min-height:0; }
+}

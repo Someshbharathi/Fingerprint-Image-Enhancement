@@ -5,14 +5,31 @@ from PIL import Image, ImageOps
 
 IMAGE_EXTENSIONS = {".bmp", ".dib", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp"}
 
-def open_grayscale(path):
-    with Image.open(path) as im:
+def grayscale_image(im: Image.Image):
+    """Convert an already-decoded Pillow image to an owned grayscale copy.
+
+    Multi-frame formats use their first frame. This function never opens a path
+    or treats the Pillow image as a file-like stream.
+    """
+    try:
+        im.seek(0)
         im.load()
-        if im.mode in ("RGBA", "LA") or "transparency" in im.info:
-            rgba = im.convert("RGBA")
-            bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
-            im = Image.alpha_composite(bg, rgba)
-        return im.convert("L").copy()
+    except (EOFError, OSError) as exc:
+        raise ValueError("The image's first frame could not be decoded") from exc
+    if not im.width or not im.height:
+        raise ValueError("Image dimensions are invalid")
+    if im.mode in ("RGBA", "LA") or "transparency" in im.info:
+        rgba = im.convert("RGBA")
+        bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+        im = Image.alpha_composite(bg, rgba)
+    return im.convert("L").copy()
+
+def open_grayscale(path):
+    """Read an image path or convert a decoded Pillow image to grayscale."""
+    if isinstance(path, Image.Image):
+        return grayscale_image(path)
+    with Image.open(path) as im:
+        return grayscale_image(im)
 
 def resize_and_pad(image, size=256, pad_value=255):
     if size <= 0:
