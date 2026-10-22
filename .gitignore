@@ -50,9 +50,9 @@ datasets/
 runs/
 logs/
 results/
-*.csv
-*.png
-*.jpg
+
+
+
 *.jpeg
 *.tif
 *.tiff
