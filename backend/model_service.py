@@ -97,7 +97,7 @@ class ModelService:
         original_size = list(image.size)
         x = image_to_tensor(image, self.image_size).unsqueeze(0).to(self.device)
         started = time.perf_counter()
-        with self.lock, torch.inference_mode():
+        with self.lock, torch.no_grad():
             y = self.model(x)
         elapsed = time.perf_counter() - started
         if y.ndim != 4 or tuple(y.shape) != (1, 1, self.image_size, self.image_size):
