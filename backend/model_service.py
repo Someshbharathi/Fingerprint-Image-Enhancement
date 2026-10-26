@@ -6,11 +6,11 @@ import numpy as np
 import torch
 from PIL import Image, UnidentifiedImageError
 from src.model import ResNetEnhancer
-from src.preprocessing import grayscale_image, image_to_tensor, tensor_to_image
+from src.preprocessing import grayscale_image, tensor_to_image
 from src.utils import get_device
 
 log = logging.getLogger(__name__)
-ALLOWED = {"png", "jpg", "jpeg", "tif", "tiff"}
+ALLOWED = {"png", "jpg", "jpeg", "tif", "tiff","bmp"}
 
 class ModelService:
     def __init__(self, checkpoint: Path):
@@ -93,15 +93,68 @@ class ModelService:
             raise ValueError("The uploaded file is not a valid readable image") from exc
 
     def enhance(self, image: Image.Image):
-        if self.model is None: raise RuntimeError(self.error or "Model is unavailable")
-        original_size = list(image.size)
-        x = image_to_tensor(image, self.image_size).unsqueeze(0).to(self.device)
+        if self.model is None:
+            raise RuntimeError(self.error or "Model is unavailable")
+
+        # Preserve the uploaded image dimensions.
+        original = image.convert("L")
+        original_size = original.size  # (width, height)
+
+        size = self.image_size
+        w, h = original_size
+
+        # Resize proportionally to fit inside the model's square input.
+        scale = min(size / w, size / h)
+        resized_w = max(1, round(w * scale))
+        resized_h = max(1, round(h * scale))
+
+        resized = original.resize(
+            (resized_w, resized_h),
+            Image.Resampling.LANCZOS
+        )
+
+        # Center the resized image on the checkpoint's square input canvas.
+        left = (size - resized_w) // 2
+        top = (size - resized_h) // 2
+
+        canvas = Image.new("L", (size, size), 255)
+        canvas.paste(resized, (left, top))
+
+        # Keep the checkpoint input as normalized (N,C,H,W) float32.
+        x = torch.from_numpy(
+            np.asarray(canvas, dtype=np.float32).copy() / 255.0
+        ).unsqueeze(0).unsqueeze(0).to(self.device)
+
         started = time.perf_counter()
+
         with self.lock, torch.no_grad():
             y = self.model(x)
+
         elapsed = time.perf_counter() - started
-        if y.ndim != 4 or tuple(y.shape) != (1, 1, self.image_size, self.image_size):
-            raise RuntimeError(f"Unexpected model output shape: {tuple(y.shape)}")
-        result = tensor_to_image(y[0])
+
+        # Validate the model output.
+        if y.ndim != 4 or tuple(y.shape) != (1, 1, size, size):
+            raise RuntimeError(
+                f"Unexpected model output shape: {tuple(y.shape)}"
+            )
+
+        # Convert prediction to a grayscale image.
+        prediction = tensor_to_image(y[0])
+
+        # Remove the white padding added before inference.
+        prediction = prediction.crop((
+            left,
+            top,
+            left + resized_w,
+            top + resized_h
+        ))
+
+        # Restore the dimensions of the uploaded image.
+        result = prediction.resize(
+            original_size,
+            Image.Resampling.LANCZOS
+        )
+
         self.latest_inference = datetime.now(timezone.utc).isoformat()
-        return result, elapsed, original_size
+
+        return result, elapsed, list(original_size)

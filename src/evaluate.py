@@ -132,7 +132,14 @@ def main():
             predictions = model(inputs)
 
             for i, image_path in enumerate(batch["path"]):
-                mse, rmse, psnr, ssim = metrics(
+                # Baseline: degraded input vs clean reference
+                baseline_mse, baseline_rmse, baseline_psnr, baseline_ssim = metrics(
+                    inputs[i],
+                    targets[i]
+                )
+
+                # Model result: enhanced output vs clean reference
+                enhanced_mse, enhanced_rmse, enhanced_psnr, enhanced_ssim = metrics(
                     predictions[i],
                     targets[i]
                 )
@@ -153,18 +160,27 @@ def main():
 
                 rows.append({
                     "path": image_path,
-                    "mse": mse,
-                    "rmse": rmse,
-                    "psnr_db": psnr,
-                    "ssim": ssim
+                    "baseline_mse": baseline_mse,
+                    "baseline_rmse": baseline_rmse,
+                    "baseline_psnr_db": baseline_psnr,
+                    "baseline_ssim": baseline_ssim,
+                    "enhanced_mse": enhanced_mse,
+                    "enhanced_rmse": enhanced_rmse,
+                    "enhanced_psnr_db": enhanced_psnr,
+                    "enhanced_ssim": enhanced_ssim
                 })
+
 
     fieldnames = [
         "path",
-        "mse",
-        "rmse",
-        "psnr_db",
-        "ssim"
+        "baseline_mse",
+        "baseline_rmse",
+        "baseline_psnr_db",
+        "baseline_ssim",
+        "enhanced_mse",
+        "enhanced_rmse",
+        "enhanced_psnr_db",
+        "enhanced_ssim"
     ]
 
     with metrics_path.open(

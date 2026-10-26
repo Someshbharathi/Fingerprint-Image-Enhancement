@@ -60,16 +60,33 @@ class EvaluationManager:
                     start=time.perf_counter()
                     with self.model.lock, torch.inference_mode(): y=self.model.model(x)
                     ms=(time.perf_counter()-start)*1000; latency.append(ms)
-                    a=y[0,0].detach().cpu().numpy(); b=sample["target"][0].numpy()
-                    row={"image":Path(sample["path"]).name,"path":sample["path"],**calculate_metrics(a,b),"inference_ms":ms}
+                    enhanced=y[0,0].detach().cpu().numpy()
+                    baseline=sample["input"][0].detach().cpu().numpy()
+                    reference=sample["target"][0].detach().cpu().numpy()
+                    baseline_metrics=calculate_metrics(baseline,reference)
+                    enhanced_metrics=calculate_metrics(enhanced,reference)
+                    # Keep the historical top-level metric keys as enhanced-versus-reference
+                    # aliases for existing consumers; the nested groups are authoritative.
+                    row={"image":Path(sample["path"]).name,"path":sample["path"],
+                         "baseline":baseline_metrics,"enhanced":enhanced_metrics,
+                         **enhanced_metrics,"inference_ms":ms}
                     rows.append(row)
                 except Exception as exc: failures.append({"path":paths[idx],"error":str(exc)})
                 state["progress"] = int((len(missing)+idx+1)/len(paths)*100)
             if not rows: raise RuntimeError("No test samples could be evaluated")
-            summary={k:(float(np.mean([r[k] for r in rows if r[k] is not None and np.isfinite(r[k])])) if any(r[k] is not None and np.isfinite(r[k]) for r in rows) else None) for k in ("mse","psnr_db","ssim","inference_ms")}
+            def mean_metric(values):
+                valid=[v for v in values if v is not None and np.isfinite(v)]
+                return float(np.mean(valid)) if valid else None
+            baseline_summary={k:mean_metric([r["baseline"][k] for r in rows]) for k in ("mse","psnr_db","ssim")}
+            enhanced_summary={k:mean_metric([r["enhanced"][k] for r in rows]) for k in ("mse","psnr_db","ssim")}
+            latency_mean=mean_metric([r["inference_ms"] for r in rows])
+            summary={"baseline":baseline_summary,"enhanced":enhanced_summary,"inference_ms":latency_mean,
+                     # Legacy aggregate aliases retain their original enhanced meaning.
+                     **enhanced_summary}
             run={"run_id":job,"created_at":datetime.now(timezone.utc).isoformat(),"status":"completed","checkpoint":self.model.path.name,
-                 "protocol":"Existing test.csv paths; grayscale resize/pad; deterministic evaluation_degradation seed=1234; reference is clean target.",
-                 "intensity_range":"[0,1]","aggregation":"Arithmetic mean of per-image metrics; latency mean per image.",
+                 "protocol":"Existing test.csv paths; grayscale resize/pad; deterministic evaluation_degradation seed=1234; baseline is degraded input and enhanced is model output, both compared with the clean target.",
+                 "metric_scope":"baseline and enhanced metrics are independently compared with the clean reference.",
+                 "intensity_range":"[0,1]","aggregation":"Arithmetic mean of baseline and enhanced per-image metrics over the same successfully evaluated images; latency mean per image.",
                  "sample_count":len(rows),"failed_count":len(failures),"summary":summary,"rows":rows,"failures":failures}
             target=self.results/f"evaluation_{job}.json"
             temporary=target.with_suffix(".tmp")

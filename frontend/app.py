@@ -1,7 +1,7 @@
 from __future__ import annotations
+import numpy as np
 import io
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import requests
@@ -15,10 +15,10 @@ from visualization import (
     identical_image_quality_metrics,
     pixel_intensity_histogram,
 )
-from state import clear_upload, select_upload
-from evaluation_summary import format_quality_mean, mean_quality_metrics
+from state import clear_upload, current_result, select_upload, store_result
+from evaluation_summary import format_quality_mean, mean_group_metrics, mean_quality_metrics, metric_change
 
-st.set_page_config(page_title="FPrint Studio", page_icon="◉", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="FPrint Studio", page_icon="◉", layout="wide", initial_sidebar_state="locked")
 st.markdown(f"<style>{Path(__file__).with_name('style.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 NAV={"WORKSPACE":[("Overview","⌂"),("Enhance Image","＋"),("Image Comparison","⇄")],"EVALUATION":[("Model Evaluation","▤"),("Analytics","⌁")],"SYSTEM":[("Settings","⚙")]}
 for key,value in (("page","Overview"),("api_url","http://127.0.0.1:5000"),("max_mb",12),("upload",None),("result",None),("session_runs",[])):
@@ -40,7 +40,7 @@ def header(eyebrow,title,subtitle):
     st.markdown(f"<div class='page-head'><div class='eyebrow'>{eyebrow}</div><div class='title'>{title}</div><div class='subtitle'>{subtitle}</div></div>",unsafe_allow_html=True)
 
 def show_images():
-    upload,result=st.session_state.upload,st.session_state.result
+    upload,result=st.session_state.upload,current_result(st.session_state)
     if not upload: st.info("Upload an image in Enhance Image to begin comparison."); return
     cols=st.columns(2)
     for col,label,data in ((cols[0],"Original",upload["data"]),(cols[1],"Enhanced",result["data"] if result else None)):
@@ -116,7 +116,7 @@ if page=="Overview":
 
 elif page=="Enhance Image":
     header("WORKSPACE","Enhance Image","Enhance fingerprint images using the trained PyTorch model with preprocessing configured to match the model's training pipeline.")
-    uploaded=st.file_uploader("Choose a fingerprint image",type=["png","jpg","jpeg","tif","tiff"],help=f"Maximum {st.session_state.max_mb} MB")
+    uploaded=st.file_uploader("Choose a fingerprint image",type=["png","jpg","jpeg","tif","tiff","bmp"],help=f"Maximum {st.session_state.max_mb} MB")
     if uploaded:
         data=uploaded.getvalue()
         if len(data)>st.session_state.max_mb*1024*1024:
@@ -130,15 +130,19 @@ elif page=="Enhance Image":
     up=st.session_state.upload
     if up:
         st.markdown(f"**{up['filename']}** · {up['size'][0]} × {up['size'][1]} px"); st.image(up["data"],caption="Input image",width=650)
-        if st.button("Enhance fingerprint",type="primary",disabled=not ready):
+        result=current_result(st.session_state)
+        if st.button("Enhance fingerprint",type="primary",disabled=not ready or result is not None):
             try:
                 with st.spinner("Running model inference…"): out,meta=post_image(st.session_state.api_url,up["data"],up["filename"])
-                st.session_state.result={"data":out,"meta":meta}; st.session_state.session_runs.append({"filename":up["filename"],"seconds":meta["seconds"]}); st.success(f"Enhancement complete · {meta['seconds']*1000:.1f} ms")
+                store_result(st.session_state,out,meta); st.session_state.session_runs.append({"filename":up["filename"],"seconds":meta["seconds"]}); st.success(f"Enhancement complete.")
             except Exception as exc: st.error(f"Enhancement failed: {exc}")
+        if result is not None: st.caption("This image already has an enhancement result. Open Image Comparison to reuse it.")
         if not ready: st.warning("The trained model is unavailable. Configure a compatible checkpoint and restart Flask.")
-    if st.session_state.result:
-        st.divider(); show_images(); st.download_button("Download enhanced PNG",st.session_state.result["data"],file_name="enhanced_fingerprint.png",mime="image/png")
-        st.caption("Output is 8-bit grayscale at checkpoint dimensions. Pixel statistics describe intensity, not fingerprint quality.")
+    result=current_result(st.session_state)
+    if result:
+        st.divider(); show_images(); st.download_button("Download enhanced PNG",result["data"],file_name="enhanced_fingerprint.png",mime="image/png")
+        st.caption("Output is 8-bit grayscale at the uploaded image dimensions. Pixel statistics describe intensity, not fingerprint quality.")
+
 elif page=="Image Comparison":
     header("WORKSPACE","Image Comparison","Inspect model output beside its input with aspect ratio preserved."); show_images()
     up,res=st.session_state.upload,st.session_state.result
@@ -147,6 +151,7 @@ elif page=="Image Comparison":
             st.markdown("**Pixel intensity distribution** · Brightness is not a measure of enhancement quality.")
             original=np.asarray(Image.open(io.BytesIO(up["data"])).convert("L")).ravel(); enhanced=np.asarray(Image.open(io.BytesIO(res["data"])).convert("L")).ravel()
             fig=style_chart(pixel_intensity_histogram(original,enhanced)); fig.update_layout(height=330); st.plotly_chart(fig,width="stretch")
+
 elif page=="Model Evaluation":
     header("EVALUATION","Model Evaluation","Evaluate the existing held-out test split using deterministic synthetic degradation.")
     st.info(
@@ -203,7 +208,7 @@ elif page=="Model Evaluation":
         st.caption(f"n={selected_run.get('sample_count','N/A')} ? failed={selected_run.get('failed_count','N/A')} ? {selected_run.get('aggregation','Aggregation unavailable')}")
         rows=selected_run.get("rows",[])
         if isinstance(rows,list) and rows:
-            frame=pd.DataFrame(rows)
+            frame=pd.json_normalize(rows,sep="_")
             st.dataframe(frame,width="stretch",hide_index=True)
             st.download_button("Export per-image CSV",frame.to_csv(index=False),file_name=f"{selected_id}.csv",mime="text/csv",key=f"csv_{selected_id}")
         else:

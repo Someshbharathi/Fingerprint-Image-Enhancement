@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 
 import torch
+from PIL import Image
 
 from .model import ResNetEnhancer
 from .utils import get_device
@@ -65,10 +66,14 @@ def main():
     image_size = state.get("image_size", 256)
 
     image = open_grayscale(input_path)
-    input_tensor = image_to_tensor(
-        image,
-        image_size
-    ).unsqueeze(0).to(device)
+    original_size = image.size
+    width, height = original_size
+    scale = min(image_size / width, image_size / height)
+    resized_size = (max(1, round(width * scale)), max(1, round(height * scale)))
+    resized = image.resize(resized_size, Image.Resampling.LANCZOS)
+    left = (image_size - resized_size[0]) // 2
+    top = (image_size - resized_size[1]) // 2
+    input_tensor = image_to_tensor(resized, image_size).unsqueeze(0).to(device)
 
     with torch.no_grad():
         prediction = model(input_tensor)[0]
@@ -78,15 +83,17 @@ def main():
         exist_ok=True
     )
 
-    tensor_to_image(prediction).save(output_path)
+    output = tensor_to_image(prediction).crop(
+        (left, top, left + resized_size[0], top + resized_size[1])
+    ).resize(original_size, Image.Resampling.LANCZOS)
+    output.save(output_path)
 
     print("Device:", device)
     print("Checkpoint epoch:", state.get("epoch", "unknown"))
     print("Input image:", input_path.resolve())
     print("Enhanced image saved:", output_path.resolve())
     print(
-        f"Note: output is resized/padded to "
-        f"{image_size}x{image_size}."
+        f"Output dimensions: {output.width}x{output.height}."
     )
 
 

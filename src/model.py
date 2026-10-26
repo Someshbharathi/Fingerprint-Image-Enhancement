@@ -23,7 +23,7 @@ class ResNetEnhancer(nn.Module):
     Residual CNN for fingerprint image enhancement.
 
     It predicts a correction to the input and adds it through a global skip
-    connection. This is a ResNet-style restoration model, not a U-Net.
+    connection. 
     """
     def __init__(self, in_channels=1, out_channels=1, features=64, num_blocks=8):
         super().__init__()

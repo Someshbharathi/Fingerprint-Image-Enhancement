@@ -188,6 +188,9 @@ div[data-testid="stDownloadButton"] button:disabled { background:#E2E8F0 !import
 .evaluation-summary-heading p { color:var(--text-secondary); font-size:12px; margin:0; }
 .evaluation-summary-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:16px; width:100%; }
 .evaluation-summary-card { box-sizing:border-box; min-width:0; min-height:132px; padding:16px 17px; background:#F8FAFC; border:1px solid var(--border); border-radius:9px; overflow-wrap:anywhere; }
+.comparison-metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; width:100%; }
+.comparison-metric-grid .evaluation-summary-card { min-height:0; padding:14px 15px; }
+.comparison-metric-grid .evaluation-summary-value { margin:9px 0 0; font-size:23px; }
 .evaluation-summary-label { color:var(--text-secondary); font-size:12px; font-weight:650; }
 .evaluation-summary-value { color:var(--text); font-size:27px; line-height:1.25; font-weight:700; letter-spacing:-.45px; margin:11px 0 7px; font-variant-numeric:tabular-nums; }
 .evaluation-summary-description { color:var(--text-secondary); font-size:11px; line-height:1.5; }
@@ -235,4 +238,7 @@ input::placeholder, textarea::placeholder { color:var(--text-muted) !important; 
   .evaluation-summary-box { padding:16px; }
   .evaluation-summary-grid { grid-template-columns:1fr; gap:10px; }
   .evaluation-summary-card { min-height:0; }
+  .comparison-metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .comparison-metric-grid .evaluation-summary-card { padding:12px; }
+  .comparison-metric-grid .evaluation-summary-value { font-size:20px; }
 }

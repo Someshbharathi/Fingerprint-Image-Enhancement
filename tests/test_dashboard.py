@@ -22,7 +22,7 @@ class DummyModel:
     latest_inference=None
     def status(self): return {**self.info,"ready":True,"error":None}
     decode=staticmethod(ModelService.decode)
-    def enhance(self,image): return Image.new("L",(16,16),128),0.012,list(image.size)
+    def enhance(self,image): return Image.new("L", image.size, 128), 0.012, list(image.size)
 
 class EmptyEval:
     def persisted(self): return []
@@ -35,6 +35,9 @@ def client():
 
 def image_bytes(fmt="PNG"):
     out=io.BytesIO(); Image.new("L",(8,6),128).save(out,format=fmt); return out.getvalue()
+
+def sized_image_bytes(size,fmt="PNG"):
+    out=io.BytesIO(); Image.new("L",size,128).save(out,format=fmt); return out.getvalue()
 
 def tiff_bytes(multi_frame=False,size=(11,7)):
     out=io.BytesIO()
@@ -66,7 +69,20 @@ def test_inference_error_is_safe_for_client_and_logged(caplog):
 def test_enhance_returns_image(client):
     response=client.post("/api/enhance",data={"image":(io.BytesIO(image_bytes()),"finger.png")},content_type="multipart/form-data")
     assert response.status_code==200 and response.mimetype=="image/png"
-    assert response.headers["X-Output-Size"]=="16x16"
+    assert response.headers["X-Input-Size"]=="8x6"
+    assert response.headers["X-Output-Size"]=="8x6"
+    with Image.open(io.BytesIO(response.data)) as output:
+        assert output.size==(8,6) and output.mode=="L"
+
+@pytest.mark.parametrize("size",[(640,480),(480,640),(300,300),(13,7),(7,13),(256,256)])
+def test_api_preserves_uploaded_dimensions(client,size):
+    response=client.post("/api/enhance",data={"image":(io.BytesIO(sized_image_bytes(size)),"finger.png")},content_type="multipart/form-data")
+    assert response.status_code==200
+    expected=f"{size[0]}x{size[1]}"
+    assert response.headers["X-Input-Size"]==expected
+    assert response.headers["X-Output-Size"]==expected
+    with Image.open(io.BytesIO(response.data)) as output:
+        assert output.size==size and output.mode=="L"
 
 @pytest.mark.parametrize(("filename","contents"),[("finger.tif",tiff_bytes()),("finger.tiff",tiff_bytes()),("finger.png",image_bytes("PNG")),("finger.jpg",image_bytes("JPEG")),("finger.jpeg",image_bytes("JPEG"))])
 def test_supported_image_uploads_enhance(client,filename,contents):
@@ -87,21 +103,22 @@ def test_decode_accepts_bytes_stream_and_pillow_image():
     assert np.array_equal(np.asarray(from_bytes),np.asarray(from_stream))
     assert np.array_equal(np.asarray(from_bytes),np.asarray(already_decoded))
 
-def test_inference_receives_expected_tensor_from_decoded_tiff():
+@pytest.mark.parametrize("size",[(640,480),(480,640),(300,300),(13,7),(7,13),(256,256)])
+def test_inference_receives_fixed_tensor_and_restores_dimensions(size):
     class CaptureModel:
         def __call__(self,tensor):
             self.input=tensor.detach().clone()
             return tensor
     service=ModelService.__new__(ModelService)
-    service.model=CaptureModel(); service.error=None; service.image_size=16
+    service.model=CaptureModel(); service.error=None; service.image_size=256
     service.device=torch.device("cpu"); service.lock=__import__('threading').Lock()
     service.latest_inference=None
-    image=ModelService.decode(tiff_bytes(),"finger.tif")
+    image=Image.new("L",size,117)
     output,_,_=service.enhance(image)
     tensor=service.model.input
-    assert tuple(tensor.shape)==(1,1,16,16)
+    assert tuple(tensor.shape)==(1,1,256,256)
     assert tensor.dtype==torch.float32 and 0<=float(tensor.min())<=float(tensor.max())<=1
-    assert output.mode=="L" and output.size==(16,16)
+    assert output.mode=="L" and output.size==size
 
 def test_tiff_endpoint_reaches_real_checkpoint_and_returns_image(tmp_path,monkeypatch):
     if not default_settings.checkpoint.is_file():
@@ -122,7 +139,9 @@ def test_tiff_endpoint_reaches_real_checkpoint_and_returns_image(tmp_path,monkey
     assert service.latest_inference is not None
     with Image.open(io.BytesIO(response.data)) as output:
         output.load()
-        assert output.format=="PNG" and output.mode=="L" and output.size==(service.image_size,service.image_size)
+        assert output.format == "PNG"
+        assert output.mode == "L"
+        assert output.size == sample.size
 
 def test_metrics_known_arrays():
     a=np.zeros((32,32)); b=np.ones((32,32))
@@ -200,3 +219,32 @@ def test_evaluation_counts_missing_manifest_paths_as_failures(tmp_path):
     assert status["result"]["failed_count"]==1
     assert status["result"]["failures"][0]["path"].endswith("missing.png")
     assert len(manager.persisted())==1
+
+def test_evaluation_persists_separate_baseline_and_enhanced_metrics(tmp_path):
+    image_path=tmp_path/"clean.png"; Image.new("L",(16,16),180).save(image_path)
+    second_path=tmp_path/"clean_second.png"; Image.new("L",(16,16),200).save(second_path)
+    manifest=tmp_path/"test.csv"
+    with manifest.open("w",newline="",encoding="utf-8") as f:
+        writer=csv.DictWriter(f,fieldnames=["path","split","eligibility"]); writer.writeheader()
+        writer.writerow({"path":str(image_path),"split":"test","eligibility":"eligible_candidate"})
+        writer.writerow({"path":str(second_path),"split":"test","eligibility":"eligible_candidate"})
+
+    class ZeroModel:
+        def __call__(self,x): return torch.zeros_like(x)
+    class EvaluationService:
+        model=ZeroModel(); device=torch.device("cpu"); image_size=16
+        lock=__import__("threading").Lock(); path=tmp_path/"checkpoint.pt"; error=None
+
+    manager=EvaluationManager(EvaluationService(),manifest,tmp_path/"runs")
+    manager.jobs["metric-run"]={"job_id":"metric-run","status":"running","progress":0}
+    manager._run("metric-run")
+    result=manager.status("metric-run")["result"]
+    row=result["rows"][0]
+    assert set(row["baseline"])==set(row["enhanced"])=={"mse","psnr_db","ssim"}
+    assert row["baseline"]["mse"] < row["enhanced"]["mse"]
+    assert result["summary"]["baseline"]["mse"]==pytest.approx(np.mean([r["baseline"]["mse"] for r in result["rows"]]))
+    assert result["summary"]["enhanced"]["mse"]==pytest.approx(np.mean([r["enhanced"]["mse"] for r in result["rows"]]))
+    assert result["summary"]["inference_ms"]==pytest.approx(np.mean([r["inference_ms"] for r in result["rows"]]))
+    persisted=json.loads((tmp_path/"runs"/"evaluation_metric-run.json").read_text(encoding="utf-8"))
+    assert persisted["rows"][0]["baseline"]==row["baseline"]
+    assert persisted["rows"][0]["enhanced"]==row["enhanced"]
