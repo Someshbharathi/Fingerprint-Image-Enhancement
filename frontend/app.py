@@ -205,7 +205,6 @@ elif page=="Model Evaluation":
         )
         selected_run=run_by_id[selected_id]
         st.subheader(f"Run {selected_id}")
-        st.caption(f"n={selected_run.get('sample_count','N/A')} ? failed={selected_run.get('failed_count','N/A')} ? {selected_run.get('aggregation','Aggregation unavailable')}")
         rows=selected_run.get("rows",[])
         if isinstance(rows,list) and rows:
             frame=pd.json_normalize(rows,sep="_")
