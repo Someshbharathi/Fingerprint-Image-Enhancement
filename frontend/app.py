@@ -64,7 +64,7 @@ def style_chart(fig):
 
 page=st.session_state.page
 if page=="Overview":
-    header("BIOMETRIC IMAGE PROCESSING","Fingerprint Enhancement","Enhance ridge visibility, compare image quality, and evaluate your model.")
+    header("BIOMETRIC IMAGE PROCESSING","Fingerprint Enhancement","Enhance ridge visibility, compare image quality, and evaluate your  .")
     try:
         analytics=get_json(st.session_state.api_url,"/api/analytics"); events=analytics["processing"]; runs=analytics["evaluations"]
     except Exception: events={"images_processed":0,"successful_runs":0,"mean_inference_seconds":None,"recent":[]}; runs=[]
